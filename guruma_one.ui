@@ -66,7 +66,7 @@
       <string>종목</string>
      </property>
     </widget>
-    <widget class="QLineEdit" name="lineEdit">
+    <widget class="QLineEdit" name="stockCode">
      <property name="geometry">
       <rect>
        <x>80</x>
@@ -89,7 +89,7 @@
       <string>종류</string>
      </property>
     </widget>
-    <widget class="QComboBox" name="comboBox_2">
+    <widget class="QComboBox" name="orderType">
      <property name="geometry">
       <rect>
        <x>80</x>
@@ -112,16 +112,6 @@
       <string>매수 금액</string>
      </property>
     </widget>
-    <widget class="QSpinBox" name="spinBox">
-     <property name="geometry">
-      <rect>
-       <x>81</x>
-       <y>157</y>
-       <width>161</width>
-       <height>22</height>
-      </rect>
-     </property>
-    </widget>
     <widget class="QLabel" name="label_5">
      <property name="geometry">
       <rect>
@@ -133,16 +123,6 @@
      </property>
      <property name="text">
       <string>매수 수량</string>
-     </property>
-    </widget>
-    <widget class="QSpinBox" name="spinBox_2">
-     <property name="geometry">
-      <rect>
-       <x>80</x>
-       <y>199</y>
-       <width>161</width>
-       <height>22</height>
-      </rect>
      </property>
     </widget>
     <widget class="QLabel" name="label_6">
@@ -158,16 +138,6 @@
       <string>매도 금액</string>
      </property>
     </widget>
-    <widget class="QSpinBox" name="spinBox_3">
-     <property name="geometry">
-      <rect>
-       <x>80</x>
-       <y>240</y>
-       <width>161</width>
-       <height>22</height>
-      </rect>
-     </property>
-    </widget>
     <widget class="QLabel" name="label_7">
      <property name="geometry">
       <rect>
@@ -181,13 +151,43 @@
       <string>매도 수량</string>
      </property>
     </widget>
-    <widget class="QSpinBox" name="spinBox_4">
+    <widget class="QLineEdit" name="buyPrice">
      <property name="geometry">
       <rect>
-       <x>83</x>
-       <y>287</y>
+       <x>80</x>
+       <y>157</y>
        <width>161</width>
-       <height>22</height>
+       <height>21</height>
+      </rect>
+     </property>
+    </widget>
+    <widget class="QLineEdit" name="buyAmount">
+     <property name="geometry">
+      <rect>
+       <x>80</x>
+       <y>196</y>
+       <width>161</width>
+       <height>21</height>
+      </rect>
+     </property>
+    </widget>
+    <widget class="QLineEdit" name="sellPrice">
+     <property name="geometry">
+      <rect>
+       <x>80</x>
+       <y>240</y>
+       <width>161</width>
+       <height>21</height>
+      </rect>
+     </property>
+    </widget>
+    <widget class="QLineEdit" name="sellAmount">
+     <property name="geometry">
+      <rect>
+       <x>80</x>
+       <y>285</y>
+       <width>161</width>
+       <height>21</height>
       </rect>
      </property>
     </widget>
@@ -235,7 +235,7 @@
      <x>0</x>
      <y>0</y>
      <width>800</width>
-     <height>21</height>
+     <height>26</height>
     </rect>
    </property>
   </widget>
