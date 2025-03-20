@@ -8,6 +8,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QMessageBox, QTableWidgetItem
 from pykiwoom.kiwoom import Kiwoom
 import configparser
+from PyQt5.QtCore import QTimer
 
 
 # 주문 유형 Enum (매수/매도)
@@ -40,6 +41,11 @@ class HogaType(Enum):
     AFTER_HOURS_SINGLE = "62"  # 시간외 단일가
     POST_MARKET_CLOSE = "81"  # 장후 시간외 종가
 
+def get_cell_value_or_error(df, row_idx, col_name):
+    try:
+        return df.at[row_idx, col_name]  # 특정 위치의 값 반환
+    except KeyError:
+        raise ValueError(f"Invalid index '{row_idx}' or column '{col_name}'")
 
 class StockTrader(QtWidgets.QMainWindow):
     def __init__(self):
@@ -95,6 +101,14 @@ class StockTrader(QtWidgets.QMainWindow):
 
         # 주문 버튼 이벤트 설정
         self.buyButton.clicked.connect(self.process_order)
+
+        # 주기적으로 가격 업데이트를 위한 타이머 설정
+        self.price_update_timer = QTimer(self)
+        self.price_update_timer.timeout.connect(self.update_stock_price)
+        self.price_update_timer.start(5000)  # 5초마다 실행
+
+        self.buyPrice.installEventFilter(self)
+        self.sellPrice.installEventFilter(self)
 
     def addLog(self, *args):
         print(args)
@@ -267,6 +281,14 @@ class StockTrader(QtWidgets.QMainWindow):
         :param realType: string - 실시간 타입(KOA의 실시간 목록 참조)
         :param realData: string - 실시간 데이터 전문
         """
+
+        if realType == "주식체결":
+            체결시간 = self.kiwoom.dynamicCall("GetCommRealData(QString, int)", code, 20)  # HHMMSS
+            현재가 = self.kiwoom.dynamicCall("GetCommRealData(QString, int)", code, 10)  # ±현재가
+            등락율 = self.kiwoom.dynamicCall("GetCommRealData(QString, int)", code, 12)  # ±등락율
+            체결량 = self.kiwoom.dynamicCall("GetCommRealData(QString, int)", code, 15)  # 체결량
+
+            print(f"[{code}] 체결시간: {체결시간}, 현재가: {현재가}, 등락율: {등락율}, 체결량: {체결량}")
 
         try:
             self.addLog("[receiveRealData]")
@@ -466,6 +488,90 @@ class StockTrader(QtWidgets.QMainWindow):
 
         self.addLog(msg)
 
+    def eventFilter(self, obj, event):
+        if (obj == self.buyPrice or obj == self.sellPrice) and event.type() == event.MouseButtonPress:
+            self.on_combobox_clicked()
+        return super().eventFilter(obj, event)
+
+    def on_combobox_clicked(self):
+        print("QComboBox가 클릭되었습니다!")  # 특정 함수 실행
+        self.stop_price_update()
+
+    def get_price_tick(self, price):
+        """
+        현재가를 기반으로 호가 단위를 계산하는 함수
+        """
+        if price < 1000:
+            return 1
+        elif price < 5000:
+            return 5
+        elif price < 10000:
+            return 10
+        elif price < 50000:
+            return 50
+        elif price < 100000:
+            return 100
+        elif price < 500000:
+            return 500
+        else:
+            return 1000
+
+    def update_stock_price(self):
+        """
+        조회한 주식 정보를 buyPrice와 sellPrice에 반영
+        """
+        """
+                조회한 주식 정보를 buyPrice와 sellPrice에 반영
+                """
+
+        stock_code = self.stockCode.text().strip()
+        if not stock_code:
+            self.logTextEdit.append("종목 코드를 입력하세요.")
+            return
+
+        print("opt10001 :: 주식기본정보")
+        df = self.kiwoom.block_request("opt10001",
+                                       종목코드=stock_code,
+                                       output="주식기본정보",
+                                       next=0)
+
+        current_price_str = get_cell_value_or_error(df, 0, '현재가')
+        if not current_price_str:
+            self.logTextEdit.append("현재가 정보를 가져올 수 없습니다.")
+            return
+
+        current_price_str = str(int(current_price_str))
+
+        try:
+            current_price = abs(int(current_price_str))
+        except ValueError:
+            self.logTextEdit.append("현재가 변환 오류: {current_price_str}")
+            return
+
+        price_tick = self.get_price_tick(current_price)
+
+        self.buyPrice.clear()
+        self.sellPrice.clear()
+
+        for i in range(-20, 21):  # -20호가부터 +20호가까지 추가
+            price = current_price + i * price_tick
+            label = f"{i}호가: {price}" if i != 0 else f"현재가: {price}"
+            self.buyPrice.addItem(label, price)
+            self.sellPrice.addItem(label, price)
+
+        # 기본값 설정: buyPrice는 현재가, sellPrice는 +1호가
+        self.buyPrice.setCurrentIndex(20)
+        self.sellPrice.setCurrentIndex(21)
+
+        self.logTextEdit.append(f"현재가 {current_price}원부터 ±20호가까지 설정 완료")
+
+    def stop_price_update(self):
+        """
+        사용자가 가격을 선택하면 타이머 정지
+        """
+        print("stop_price_update")
+        self.price_update_timer.stop()
+        self.logTextEdit.append("가격 선택 완료. 자동 업데이트 중지")
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
