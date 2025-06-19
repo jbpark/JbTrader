@@ -9,6 +9,7 @@ from PyQt5.QtWidgets import QMessageBox, QTableWidgetItem
 from pykiwoom.kiwoom import Kiwoom
 import configparser
 from PyQt5.QtCore import QTimer
+from PyQt5 import QtGui
 
 # 매수/매도 가격 호가 차이
 BUY_SELL_TICK_DIFF = 2
@@ -52,7 +53,93 @@ def get_cell_value_or_error(df, row_idx, col_name):
 class StockTrader(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
-        uic.loadUi("guruma_one.ui", self)  # UI 파일 로드
+        self.setWindowTitle("Gruma One v0.1")
+        self.setFont(QtGui.QFont("나눔고딕", 8))
+        self.setWindowIcon(QtGui.QIcon("stock.png"))
+
+        self.centralwidget = QtWidgets.QWidget(self)
+        self.setCentralWidget(self.centralwidget)
+
+        main_layout = QtWidgets.QHBoxLayout(self.centralwidget)
+        left_layout = QtWidgets.QVBoxLayout()
+        right_layout = QtWidgets.QVBoxLayout()
+        main_layout.addLayout(left_layout)
+        main_layout.addLayout(right_layout)
+
+        # 주식 주문 그룹박스
+        self.groupBox = QtWidgets.QGroupBox("주식 주문")
+        left_layout.addWidget(self.groupBox)
+
+        order_layout = QtWidgets.QFormLayout(self.groupBox)
+
+        self.accountComboBox = QtWidgets.QComboBox()
+        order_layout.addRow("계좌", self.accountComboBox)
+
+        self.stockCode = QtWidgets.QLineEdit()
+        order_layout.addRow("종목 코드", self.stockCode)
+
+        self.stockName = QtWidgets.QLineEdit()
+        self.stockName.setReadOnly(True)
+        order_layout.addRow("종목명", self.stockName)
+
+        self.orderType = QtWidgets.QComboBox()
+        order_layout.addRow("주문 종류", self.orderType)
+
+        self.buyPrice = QtWidgets.QComboBox()
+        order_layout.addRow("매수 금액", self.buyPrice)
+
+        self.buyAmount = QtWidgets.QLineEdit()
+        order_layout.addRow("매수 수량", self.buyAmount)
+
+        self.sellPrice = QtWidgets.QComboBox()
+        order_layout.addRow("매도 금액", self.sellPrice)
+
+        self.sellAmount = QtWidgets.QLineEdit()
+        order_layout.addRow("매도 수량", self.sellAmount)
+
+        self.buyButton = QtWidgets.QPushButton("매수 후 매도")
+        left_layout.addWidget(self.buyButton)
+
+        # 로그 그룹박스
+        self.groupBox_2 = QtWidgets.QGroupBox("로그")
+        left_layout.addWidget(self.groupBox_2)
+
+        log_layout = QtWidgets.QVBoxLayout(self.groupBox_2)
+        self.logTextEdit = QtWidgets.QTextEdit()
+        log_layout.addWidget(self.logTextEdit)
+
+        # 계좌 정보 그룹박스
+        self.accountGroupBox = QtWidgets.QGroupBox("계좌")
+        right_layout.addWidget(self.accountGroupBox)
+
+        account_layout = QtWidgets.QVBoxLayout(self.accountGroupBox)
+
+        # 계좌 정보 테이블
+        self.accountBalance = QtWidgets.QTableWidget(2, 3)  # 2행 3열 설정
+        self.accountBalance.setHorizontalHeaderLabels(["예수금 D+2", "추정예탁자산", "누적투자손익"])
+        self.accountBalance.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
+        account_layout.addWidget(self.accountBalance)
+        self.accountBalance.setMaximumHeight(105)  # 불필요한 공간 제거
+
+        # 보유 종목 그룹박스
+        self.stocksGroupBox = QtWidgets.QGroupBox("보유 종목")
+        right_layout.addWidget(self.stocksGroupBox)
+
+        stocks_layout = QtWidgets.QVBoxLayout(self.stocksGroupBox)
+
+        # 보유 종목 테이블
+        self.accountStocks = QtWidgets.QTableWidget(0, 5)  # 0행 5열 설정
+        self.accountStocks.setHorizontalHeaderLabels(["종목명", "평가손익", "수익률(%)", "보유수량", "매입가"])
+        self.accountStocks.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        stocks_layout.addWidget(self.accountStocks)
+
+        self.menubar = QtWidgets.QMenuBar(self)
+        self.setMenuBar(self.menubar)
+
+        self.statusbar = QtWidgets.QStatusBar(self)
+        self.setStatusBar(self.statusbar)
+
+        self.resize(1500, 800)  # 창 크기 조정
 
         # 서버구분 > 실서버: "0", 모의투자 서버: "1"
         self.serverGubun = None
@@ -292,10 +379,10 @@ class StockTrader(QtWidgets.QMainWindow):
         """
 
         if realType == "주식체결":
-            체결시간 = self.kiwoom.dynamicCall("GetCommRealData(QString, int)", code, 20)  # HHMMSS
-            현재가 = self.kiwoom.dynamicCall("GetCommRealData(QString, int)", code, 10)  # ±현재가
-            등락율 = self.kiwoom.dynamicCall("GetCommRealData(QString, int)", code, 12)  # ±등락율
-            체결량 = self.kiwoom.dynamicCall("GetCommRealData(QString, int)", code, 15)  # 체결량
+            체결시간 = self.kiwoom.GetCommRealData(code, 20)  # HHMMSS
+            현재가 = self.kiwoom.GetCommRealData(code, 10)  # ±현재가
+            등락율 = self.kiwoom.GetCommRealData(code, 12)  # ±등락율
+            체결량 = self.kiwoom.GetCommRealData(code, 15)  # 체결량
 
             print(f"[{code}] 체결시간: {체결시간}, 현재가: {현재가}, 등락율: {등락율}, 체결량: {체결량}")
 
